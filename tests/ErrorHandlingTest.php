@@ -11,26 +11,25 @@ use Spatie\Async\Pool;
 
 class ErrorHandlingTest extends TestCase
 {
-    /** @test */
-    public function it_can_handle_exceptions_via_catch_callback()
+
+    public function testItCanHandleExceptionViaCatchCallback()
     {
         $pool = Pool::create();
 
         foreach (range(1, 5) as $i) {
-            $pool->add(function () {
+            $pool->add(function() {
                 throw new MyException('test');
-            })->catch(function (MyException $e) {
+            })->catch(function(MyException $e) {
                 $this->assertMatchesRegularExpression('/test/', $e->getMessage());
             });
         }
 
         $pool->wait();
 
-        $this->assertCount(5, $pool->getFailed(), (string) $pool->status());
+        $this->assertCount(5, $pool->getFailed(), (string)$pool->status());
     }
 
-    /** @test */
-    public function it_can_handle_complex_exceptions_via_catch_callback()
+    public function testItCanHandleComplexExceptionsViaCatchCallback()
     {
         $pool = Pool::create();
 
@@ -38,26 +37,26 @@ class ErrorHandlingTest extends TestCase
         $fallbackExceptionCount = 0;
 
         $pool
-            ->add(function () {
-                throw new MyExceptionWithAComplexArgument('test', (object) ['error' => 'wrong query']);
+            ->add(function() {
+                throw new MyExceptionWithAComplexArgument('test', (object)['error' => 'wrong query']);
             })
-            ->catch(function (MyExceptionWithAComplexArgument $e) use (&$originalExceptionCount) {
+            ->catch(function(MyExceptionWithAComplexArgument $e) use (&$originalExceptionCount) {
                 $originalExceptionCount += 1;
             })
-            ->catch(function (ParallelException $e) use (&$fallbackExceptionCount) {
+            ->catch(function(ParallelException $e) use (&$fallbackExceptionCount) {
                 $fallbackExceptionCount += 1;
                 $this->assertEquals('test', $e->getMessage());
                 $this->assertEquals(MyExceptionWithAComplexArgument::class, $e->getOriginalClass());
             });
 
         $pool
-            ->add(function () use (&$originalExceptionCount) {
-                throw new MyExceptionWithAComplexFirstArgument((object) ['error' => 'wrong query'], 'test');
+            ->add(function() use (&$originalExceptionCount) {
+                throw new MyExceptionWithAComplexFirstArgument((object)['error' => 'wrong query'], 'test');
             })
-            ->catch(function (MyExceptionWithAComplexFirstArgument $e) use (&$originalExceptionCount) {
+            ->catch(function(MyExceptionWithAComplexFirstArgument $e) use (&$originalExceptionCount) {
                 $originalExceptionCount += 1;
             })
-            ->catch(function (ParallelException $e) use (&$fallbackExceptionCount) {
+            ->catch(function(ParallelException $e) use (&$fallbackExceptionCount) {
                 $fallbackExceptionCount += 1;
                 $this->assertEquals('test', $e->getMessage());
                 $this->assertEquals(MyExceptionWithAComplexFirstArgument::class, $e->getOriginalClass());
@@ -65,13 +64,12 @@ class ErrorHandlingTest extends TestCase
 
         $pool->wait();
 
-        $this->assertCount(2, $pool->getFailed(), (string) $pool->status());
+        $this->assertCount(2, $pool->getFailed(), (string)$pool->status());
         $this->assertEquals(0, $originalExceptionCount);
         $this->assertEquals(2, $fallbackExceptionCount);
     }
 
-    /** @test */
-    public function it_can_handle_typed_exceptions_via_catch_callback()
+    public function testItCanHandleTypedExceptionsViaCatchCallback()
     {
         $pool = Pool::create();
 
@@ -83,18 +81,18 @@ class ErrorHandlingTest extends TestCase
 
         foreach (range(1, 5) as $i) {
             $pool
-                ->add(function () {
+                ->add(function() {
                     throw new MyException('test');
                 })
-                ->catch(function (MyException $e) use (&$myExceptionCount) {
+                ->catch(function(MyException $e) use (&$myExceptionCount) {
                     $this->assertMatchesRegularExpression('/test/', $e->getMessage());
 
                     $myExceptionCount += 1;
                 })
-                ->catch(function (OtherException $e) use (&$otherExceptionCount) {
+                ->catch(function(OtherException $e) use (&$otherExceptionCount) {
                     $otherExceptionCount += 1;
                 })
-                ->catch(function (Exception $e) use (&$exceptionCount) {
+                ->catch(function(Exception $e) use (&$exceptionCount) {
                     $exceptionCount += 1;
                 });
         }
@@ -104,109 +102,102 @@ class ErrorHandlingTest extends TestCase
         $this->assertEquals(5, $myExceptionCount);
         $this->assertEquals(0, $otherExceptionCount);
         $this->assertEquals(0, $exceptionCount);
-        $this->assertCount(5, $pool->getFailed(), (string) $pool->status());
+        $this->assertCount(5, $pool->getFailed(), (string)$pool->status());
     }
 
-    /** @test */
-    public function it_throws_the_exception_if_no_catch_callback()
+    public function testItThrowsTheExceptionIfNoCatchCallback()
     {
         $this->expectException(MyException::class);
         $this->expectExceptionMessageMatches('/test/');
 
         $pool = Pool::create();
 
-        $pool->add(function () {
+        $pool->add(function() {
             throw new MyException('test');
         });
 
         $pool->wait();
     }
 
-    /** @test */
-    public function it_throws_fatal_errors()
+    public function testItThrowsFatalErrors()
     {
         $this->expectException(Error::class);
         $this->expectExceptionMessageMatches('/test/');
 
         $pool = Pool::create();
 
-        $pool->add(function () {
+        $pool->add(function() {
             throw new Error('test');
         });
 
         $pool->wait();
     }
 
-    /** @test */
-    public function it_keeps_the_original_trace()
+    public function testItKeepsTheOriginalTrace()
     {
         $pool = Pool::create();
 
-        $pool->add(function () {
+        $pool->add(function() {
             $myClass = new MyClass();
 
             $myClass->throwException();
-        })->catch(function (MyException $exception) {
+        })->catch(function(MyException $exception) {
             $this->assertStringContainsString('Spatie\Async\Tests\MyClass->throwException()', $exception->getMessage());
         });
 
         $pool->wait();
     }
 
-    /** @test */
-    public function it_handles_stderr_as_parallel_error()
+    public function testItHandlesStderrAsParallelError()
     {
         $pool = Pool::create();
 
-        $pool->add(function () {
+        $pool->add(function() {
             fwrite(STDERR, 'test');
-        })->catch(function (ParallelError $error) {
+        })->catch(function(ParallelError $error) {
             $this->assertStringContainsString('test', $error->getMessage());
         });
 
         $pool->wait();
     }
 
-    /** @test */
-    public function it_handles_stdout_as_parallel_error()
+    public function testItHandlesStdoutAsParallelError()
     {
         $pool = Pool::create();
 
-        $pool->add(function () {
+        $pool->add(function() {
             fwrite(STDOUT, 'test');
-        })->then(function ($output) {
+        })->then(function($output) {
             $this->fail('Child process output did not error on faulty output');
-        })->catch(function (ParallelError $error) {
+        })->catch(function(ParallelError $error) {
             $this->assertStringContainsString('test', $error->getMessage());
         });
 
         $pool->wait();
     }
 
-    /** @test */
-    public function deep_syntax_errors_are_thrown()
+    public function testDeepSyntaxErrorsAreThrown()
     {
         $pool = Pool::create();
 
-        $pool->add(function () {
+        $pool->add(function() {
             new ClassWithSyntaxError();
-        })->catch(function ($error) {
+        })->catch(function($error) {
             $this->assertInstanceOf(ParseError::class, $error);
         });
 
         $pool->wait();
     }
 
-    /** @test */
-    public function it_can_handle_synchronous_exception()
+    public function testItCanHandleSynchronousException()
     {
         Pool::$forceSynchronous = true;
 
         $pool = Pool::create();
 
-        $pool->add(function () {
+        $pool->add(function() {
             throw new MyException('test');
-        })->catch(function (MyException $e) {
+        })->catch(function(MyException $e) {
             $this->assertMatchesRegularExpression('/test/', $e->getMessage());
         });
 
@@ -214,4 +205,5 @@ class ErrorHandlingTest extends TestCase
 
         Pool::$forceSynchronous = false;
     }
+
 }

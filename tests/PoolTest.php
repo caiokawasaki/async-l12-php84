@@ -9,6 +9,7 @@ use Symfony\Component\Stopwatch\Stopwatch;
 
 class PoolTest extends TestCase
 {
+
     /** @var \Symfony\Component\Stopwatch\Stopwatch */
     protected $stopwatch;
 
@@ -18,22 +19,21 @@ class PoolTest extends TestCase
 
         $supported = Pool::isSupported();
 
-        if (! $supported) {
+        if (!$supported) {
             $this->markTestSkipped('Extensions `posix` and `pcntl` not supported.');
         }
 
         $this->stopwatch = new Stopwatch();
     }
 
-    /** @test */
-    public function it_can_run_processes_in_parallel()
+    public function testItCanRunProcessesInParallel()
     {
         $pool = Pool::create();
 
         $this->stopwatch->start('test');
 
         foreach (range(1, 5) as $i) {
-            $pool->add(function () {
+            $pool->add(function() {
                 usleep(1000);
             });
         }
@@ -42,35 +42,33 @@ class PoolTest extends TestCase
 
         $stopwatchResult = $this->stopwatch->stop('test');
 
-        $this->assertLessThan(400, $stopwatchResult->getDuration(), "Execution time was {$stopwatchResult->getDuration()}, expected less than 400.\n".(string) $pool->status());
+        $this->assertLessThan(400, $stopwatchResult->getDuration(), "Execution time was {$stopwatchResult->getDuration()}, expected less than 400.\n".(string)$pool->status());
     }
 
-    /** @test */
-    public function it_can_handle_success()
+    public function testItCanHandleSuccess()
     {
         $pool = Pool::create();
 
         $counter = 0;
 
         foreach (range(1, 5) as $i) {
-            $pool->add(function () {
+            $pool->add(function() {
                 return 2;
-            })->then(function (int $output) use (&$counter) {
+            })->then(function(int $output) use (&$counter) {
                 $counter += $output;
             });
         }
 
         $pool->wait();
 
-        $this->assertEquals(10, $counter, (string) $pool->status());
+        $this->assertEquals(10, $counter, (string)$pool->status());
     }
 
-    /** @test */
-    public function it_can_configure_another_binary()
+    public function testItCanConfigureAnotherBinary()
     {
         $binary = __DIR__.'/another-php-binary';
 
-        if (! file_exists($binary)) {
+        if (!file_exists($binary)) {
             symlink(PHP_BINARY, $binary);
         }
 
@@ -79,24 +77,23 @@ class PoolTest extends TestCase
         $counter = 0;
 
         foreach (range(1, 5) as $i) {
-            $pool->add(function () {
+            $pool->add(function() {
                 return 2;
-            })->then(function (int $output) use (&$counter) {
+            })->then(function(int $output) use (&$counter) {
                 $counter += $output;
             });
         }
 
         $pool->wait();
 
-        $this->assertEquals(10, $counter, (string) $pool->status());
+        $this->assertEquals(10, $counter, (string)$pool->status());
 
         if (file_exists($binary)) {
             unlink($binary);
         }
     }
 
-    /** @test */
-    public function it_can_handle_timeout()
+    public function testItCanHandleTimeout()
     {
         $pool = Pool::create()
             ->timeout(1);
@@ -104,20 +101,19 @@ class PoolTest extends TestCase
         $counter = 0;
 
         foreach (range(1, 5) as $i) {
-            $pool->add(function () {
+            $pool->add(function() {
                 sleep(2);
-            })->timeout(function () use (&$counter) {
+            })->timeout(function() use (&$counter) {
                 $counter += 1;
             });
         }
 
         $pool->wait();
 
-        $this->assertEquals(5, $counter, (string) $pool->status());
+        $this->assertEquals(5, $counter, (string)$pool->status());
     }
 
-    /** @test */
-    public function it_can_handle_millisecond_timeouts()
+    public function testItCanHandleMillisecondTimeouts()
     {
         $pool = Pool::create()
             ->timeout(0.2);
@@ -125,20 +121,19 @@ class PoolTest extends TestCase
         $counter = 0;
 
         foreach (range(1, 5) as $i) {
-            $pool->add(function () {
+            $pool->add(function() {
                 usleep(500000);
-            })->timeout(function () use (&$counter) {
+            })->timeout(function() use (&$counter) {
                 $counter += 1;
             });
         }
 
         $pool->wait();
 
-        $this->assertEquals(5, $counter, (string) $pool->status());
+        $this->assertEquals(5, $counter, (string)$pool->status());
     }
 
-    /** @test */
-    public function it_can_handle_a_maximum_of_concurrent_processes()
+    public function testItCanHandleAMaximumOfConcurrentProcesses()
     {
         $pool = Pool::create()
             ->concurrency(2);
@@ -146,7 +141,7 @@ class PoolTest extends TestCase
         $startTime = microtime(true);
 
         foreach (range(1, 3) as $i) {
-            $pool->add(function () {
+            $pool->add(function() {
                 sleep(1);
             });
         }
@@ -157,47 +152,45 @@ class PoolTest extends TestCase
 
         $executionTime = $endTime - $startTime;
 
-        $this->assertGreaterThanOrEqual(2, $executionTime, "Execution time was {$executionTime}, expected more than 2.\n".(string) $pool->status());
-        $this->assertCount(3, $pool->getFinished(), (string) $pool->status());
+        $this->assertGreaterThanOrEqual(2, $executionTime, "Execution time was {$executionTime}, expected more than 2.\n".(string)$pool->status());
+        $this->assertCount(3, $pool->getFinished(), (string)$pool->status());
     }
 
-    /** @test */
-    public function it_works_with_helper_functions()
+    public function testItWorksWithHelperFunctions()
     {
         $pool = Pool::create();
 
         $counter = 0;
 
         foreach (range(1, 5) as $i) {
-            $pool[] = async(function () {
+            $pool[] = async(function() {
                 usleep(random_int(10, 1000));
 
                 return 2;
-            })->then(function (int $output) use (&$counter) {
+            })->then(function(int $output) use (&$counter) {
                 $counter += $output;
             });
         }
 
         await($pool);
 
-        $this->assertEquals(10, $counter, (string) $pool->status());
+        $this->assertEquals(10, $counter, (string)$pool->status());
     }
 
-    /** @test */
-    public function it_can_use_a_class_from_the_parent_process()
+    public function testItCanUseAClassFromTheParentProcess()
     {
         $pool = Pool::create();
 
         /** @var MyClass $result */
         $result = null;
 
-        $pool[] = async(function () {
+        $pool[] = async(function() {
             $class = new MyClass();
 
             $class->property = true;
 
             return $class;
-        })->then(function (MyClass $class) use (&$result) {
+        })->then(function(MyClass $class) use (&$result) {
             $result = $class;
         });
 
@@ -207,8 +200,7 @@ class PoolTest extends TestCase
         $this->assertTrue($result->property);
     }
 
-    /** @test */
-    public function it_returns_all_the_output_as_an_array()
+    public function testItReturnsAllTheOutputAsAnArray()
     {
         $pool = Pool::create();
 
@@ -216,7 +208,7 @@ class PoolTest extends TestCase
         $result = null;
 
         foreach (range(1, 5) as $i) {
-            $pool[] = async(function () {
+            $pool[] = async(function() {
                 return 2;
             });
         }
@@ -227,8 +219,7 @@ class PoolTest extends TestCase
         $this->assertEquals(10, array_sum($result));
     }
 
-    /** @test */
-    public function it_can_work_with_tasks()
+    public function testItCanWorkWithTasks()
     {
         $pool = Pool::create();
 
@@ -239,8 +230,7 @@ class PoolTest extends TestCase
         $this->assertEquals(2, $results[0]);
     }
 
-    /** @test */
-    public function it_can_accept_tasks_with_pool_add()
+    public function testItCanAcceptTasksWithPoolAdd()
     {
         $pool = Pool::create();
 
@@ -251,14 +241,12 @@ class PoolTest extends TestCase
         $this->assertEquals(2, $results[0]);
     }
 
-    /** @test */
-    public function it_can_check_for_asynchronous_support()
+    public function testItCanCheckForAsynchronousSupport()
     {
         $this->assertTrue(Pool::isSupported());
     }
 
-    /** @test */
-    public function it_can_run_invokable_classes()
+    public function testItCanRunInvokableClasses()
     {
         $pool = Pool::create();
 
@@ -269,8 +257,7 @@ class PoolTest extends TestCase
         $this->assertEquals(2, $results[0]);
     }
 
-    /** @test */
-    public function it_reports_error_for_non_invokable_classes()
+    public function testItReportsErrorForNonInvokableClasses()
     {
         $this->expectException(InvalidArgumentException::class);
 
@@ -279,18 +266,18 @@ class PoolTest extends TestCase
         $pool->add(new NonInvokableClass());
     }
 
-    public function it_can_run_synchronous_processes()
+    public function testItCanRunSynchronousProcesses()
     {
         $pool = Pool::create();
 
         $this->stopwatch->start('test');
 
         foreach (range(1, 3) as $i) {
-            $pool->add(new SynchronousProcess(function () {
+            $pool->add(new SynchronousProcess(function() {
                 sleep(1);
 
                 return 2;
-            }, $i))->then(function ($output) {
+            }, $i))->then(function($output) {
                 $this->assertEquals(2, $output);
             });
         }
@@ -299,17 +286,16 @@ class PoolTest extends TestCase
 
         $stopwatchResult = $this->stopwatch->stop('test');
 
-        $this->assertGreaterThan(3000, $stopwatchResult->getDuration(), "Execution time was {$stopwatchResult->getDuration()}, expected less than 3000.\n".(string) $pool->status());
+        $this->assertGreaterThan(3000, $stopwatchResult->getDuration(), "Execution time was {$stopwatchResult->getDuration()}, expected less than 3000.\n".(string)$pool->status());
     }
 
-    /** @test */
-    public function it_will_automatically_schedule_synchronous_tasks_if_pcntl_not_supported()
+    public function testItWillAutomaticallyScheduleSynchronousTasksIfPcntlNotSupported()
     {
         Pool::$forceSynchronous = true;
 
         $pool = Pool::create();
 
-        $pool[] = async(new MyTask())->then(function ($output) {
+        $pool[] = async(new MyTask())->then(function($output) {
             $this->assertEquals(2, $output);
         });
 
@@ -318,37 +304,35 @@ class PoolTest extends TestCase
         Pool::$forceSynchronous = false;
     }
 
-    /** @test */
-    public function it_takes_an_intermediate_callback()
+    public function testItTakesAnIntermediateCallback()
     {
         $pool = Pool::create();
 
-        $pool[] = async(function () {
+        $pool[] = async(function() {
             return 1;
         });
 
         $isIntermediateCallbackCalled = false;
 
-        $pool->wait(function (Pool $pool) use (&$isIntermediateCallbackCalled) {
+        $pool->wait(function(Pool $pool) use (&$isIntermediateCallbackCalled) {
             $isIntermediateCallbackCalled = true;
         });
 
         $this->assertTrue($isIntermediateCallbackCalled);
     }
 
-    /** @test */
-    public function it_takes_a_cancellable_intermediate_callback()
+    public function testItTakesACancellableIntermediateCallback()
     {
         $pool = Pool::create();
 
         $isVisited = false;
-        $pool[] = async(function () {
+        $pool[] = async(function() {
             sleep(2);
-        })->then(function () use (&$isVisited) {
+        })->then(function() use (&$isVisited) {
             $isVisited = true;
         });
 
-        $pool->wait(function () {
+        $pool->wait(function() {
             // Returning true should quit waiting before the task is completed
             return true;
         });
@@ -356,8 +340,7 @@ class PoolTest extends TestCase
         $this->assertFalse($isVisited);
     }
 
-    /** @test */
-    public function it_can_be_stopped_early()
+    public function testItCanBeStoppedEarly()
     {
         $concurrency = 20;
         $stoppingPoint = $concurrency / 5;
@@ -368,9 +351,9 @@ class PoolTest extends TestCase
         $completedProcessesCount = 0;
 
         for ($i = 0; $i < $maxProcesses; $i++) {
-            $pool->add(function () use ($i) {
+            $pool->add(function() use ($i) {
                 return $i;
-            })->then(function ($output) use ($pool, &$completedProcessesCount, $stoppingPoint) {
+            })->then(function($output) use ($pool, &$completedProcessesCount, $stoppingPoint) {
                 $completedProcessesCount++;
 
                 if ($output === $stoppingPoint) {
@@ -389,28 +372,26 @@ class PoolTest extends TestCase
         $this->assertLessThanOrEqual($concurrency * 2, $completedProcessesCount);
     }
 
-    /** @test */
-    public function it_writes_large_serialized_tasks_to_file()
+    public function testItWritesLargeSerializedTasksToFile()
     {
         $pool = Pool::create()->maxTaskPayload(10);
 
         $counter = 0;
 
         foreach (range(1, 5) as $i) {
-            $pool->add(function () {
+            $pool->add(function() {
                 return 2;
-            })->then(function (int $output) use (&$counter) {
+            })->then(function(int $output) use (&$counter) {
                 $counter += $output;
             });
         }
 
         $pool->wait();
 
-        $this->assertEquals(10, $counter, (string) $pool->status());
+        $this->assertEquals(10, $counter, (string)$pool->status());
     }
 
-    /** @test */
-    public function it_does_memory_footprint_controllable_by_clearing_results_issue_235()
+    public function testItDoesMemoryFootprintControllableByClearingResultsIssue235()
     {
         $pool = Pool::create();
         $this->assertEquals('queue: 0 - finished: 0 - failed: 0 - timeout: 0', trim($pool->status()->__toString()));
@@ -418,10 +399,16 @@ class PoolTest extends TestCase
         $memUsageBefore = memory_get_usage();
         $cntTasks = 30; // sane value to test, increasing above >500 takes a substantial time to test
         foreach (range(1, $cntTasks) as $i) {
-            $pool->add(function () { return 1; });
+            $pool->add(function() {
+                return 1;
+            });
         }
         $pool->wait();
-        $this->assertEquals('queue: 0 - finished: ' . $cntTasks . ' - failed: 0 - timeout: 0', trim($pool->status()->__toString()));
+        $this->assertEquals(
+            'queue: 0 - finished: '.$cntTasks.' - failed: 0 - timeout: 0', trim(
+            $pool->status()->__toString()
+        )
+        );
         gc_collect_cycles();
         $memUsageAfter1000Tasks = memory_get_usage();
         $etaTaskMemFootprint = ($memUsageAfter1000Tasks - $memUsageBefore) / $cntTasks;
@@ -447,11 +434,12 @@ class PoolTest extends TestCase
          */
         $this->assertTrue(
             $etaTaskMemFootprint > 3000 && $etaTaskMemFootprint < 5000,
-            'memory footprint without wipe not as axpected, etaTaskMemFootprint: ' . $etaTaskMemFootprint
+            'memory footprint without wipe not as axpected, etaTaskMemFootprint: '.$etaTaskMemFootprint
         );
         $this->assertTrue(
             $etaTaskMemFootprintWiped > 0 && $etaTaskMemFootprintWiped < 500,
-            'memory footprint with wipe not as axpected, etaTaskMemFootprintWiped: ' . $etaTaskMemFootprintWiped
+            'memory footprint with wipe not as axpected, etaTaskMemFootprintWiped: '.$etaTaskMemFootprintWiped
         );
     }
+
 }

@@ -51,7 +51,7 @@ class ContentLengthTest extends TestCase
         }, $longerContentLength)
             ->catch(function (ParallelError $e) use ($longerContentLength) {
                 $message = "/The output returned by this child process is too large. The serialized output may only be $longerContentLength bytes long./";
-                $this->assertMatchesRegExp($message, $e->getMessage());
+                $this->assertMatchesRegularExpression($message, $e->getMessage());
             });
 
         await($pool);
@@ -69,7 +69,7 @@ class ContentLengthTest extends TestCase
         }, $longerContentLength)
             ->catch(function (ParallelError $e) use ($longerContentLength) {
                 $message = "/The output returned by this child process is too large. The serialized output may only be $longerContentLength bytes long./";
-                $this->assertMatchesRegExp($message, $e->getMessage());
+                $this->assertMatchesRegularExpression($message, $e->getMessage());
             });
 
         await($pool);

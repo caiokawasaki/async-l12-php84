@@ -20,7 +20,7 @@ class ErrorHandlingTest extends TestCase
             $pool->add(function () {
                 throw new MyException('test');
             })->catch(function (MyException $e) {
-                $this->assertMatchesRegExp('/test/', $e->getMessage());
+                $this->assertMatchesRegularExpression('/test/', $e->getMessage());
             });
         }
 
@@ -87,7 +87,7 @@ class ErrorHandlingTest extends TestCase
                     throw new MyException('test');
                 })
                 ->catch(function (MyException $e) use (&$myExceptionCount) {
-                    $this->assertMatchesRegExp('/test/', $e->getMessage());
+                    $this->assertMatchesRegularExpression('/test/', $e->getMessage());
 
                     $myExceptionCount += 1;
                 })
@@ -111,7 +111,7 @@ class ErrorHandlingTest extends TestCase
     public function it_throws_the_exception_if_no_catch_callback()
     {
         $this->expectException(MyException::class);
-        $this->expectExceptionMessageRegularExpression('/test/');
+        $this->expectExceptionMessageMatches('/test/');
 
         $pool = Pool::create();
 
@@ -126,7 +126,7 @@ class ErrorHandlingTest extends TestCase
     public function it_throws_fatal_errors()
     {
         $this->expectException(Error::class);
-        $this->expectExceptionMessageRegularExpression('/test/');
+        $this->expectExceptionMessageMatches('/test/');
 
         $pool = Pool::create();
 
@@ -207,7 +207,7 @@ class ErrorHandlingTest extends TestCase
         $pool->add(function () {
             throw new MyException('test');
         })->catch(function (MyException $e) {
-            $this->assertMatchesRegExp('/test/', $e->getMessage());
+            $this->assertMatchesRegularExpression('/test/', $e->getMessage());
         });
 
         $pool->wait();

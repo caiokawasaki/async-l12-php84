@@ -1,6 +1,6 @@
 {
     "version": "1.8.0",
-    "name": "spatie/async",
+    "name": "caiokawasaki/async-l12-php84",
     "description": "Asynchronous and parallel PHP with the PCNTL extension",
     "keywords": [
         "spatie",
